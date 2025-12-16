@@ -149,12 +149,11 @@ function answer(i){
   if(turn==='attacker'){
     const q=attackerPool[ai];
     if(i===q.c){
-      st.innerText='QOL! Hücumçu qalib gəldi';
+      st.innerText='Hücumçu düzgün cavab verdi – qapıçı cavab verəcək';
       ball.classList.add('kick');
-      s1++;
-      document.getElementById('s1').innerText=s1;
-      showWin();
-      return;
+      attackerWrong=false;
+      ai++;
+      turn='keeper';
     } else {
       st.innerText='Hücumçu səhv etdi – qapıçı cavab verir';
       attackerWrong=true;
@@ -163,22 +162,38 @@ function answer(i){
     }
   } else {
     const q=keeperPool[ki];
-    if(i===q.c){
-      st.innerText='Qapıçı düzgün cavab verdi – QALİB!';
+    if(i===q.c && attackerWrong===false){
+      // hər ikisi doğru → davam
+      st.innerText='Hər iki iştirakçı düzgün cavab verdi – oyun davam edir';
+      ki++;
+      turn='attacker';
+    }
+    else if(i!==q.c && attackerWrong===false){
+      // hücumçu doğru, qapıçı səhv → hücumçu qalib
+      ball.classList.add('kick');
+      s1++;
+      document.getElementById('s1').innerText=s1;
+      showWin();
+      return;
+    }
+    else if(i===q.c && attackerWrong===true){
+      // hücumçu səhv, qapıçı doğru → qapıçı qalib
       ball.classList.add('save');
       s2++;
       document.getElementById('s2').innerText=s2;
       showWin();
       return;
-    } else {
+    }
+    else{
+      // hər ikisi səhv → xal yaz, davam et
       st.innerText='Hər iki iştirakçı səhv etdi – oyun davam edir';
-      if(attackerWrong){s1++;document.getElementById('s1').innerText=s1;}
-      attackerWrong=false;
       ki++;
       turn='attacker';
     }
+    attackerWrong=false;
   }
   setTimeout(loadQuestion,600);
+}
 }
 
 function showWin(){
