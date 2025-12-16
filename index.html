@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+<meta charset="UTF-8">
+<title>İki Nəfərlik Futbol Quiz Oyunu</title>
+<style>
+body{margin:0;font-family:Arial;background:linear-gradient(#27ae60,#145a32);display:flex;justify-content:center;align-items:center;height:100vh}
+#game{background:#fff;width:95%;max-width:1100px;border-radius:20px;padding:20px;box-shadow:0 10px 30px rgba(0,0,0,.4)}
+h1{text-align:center}
+#info{display:flex;justify-content:space-between;font-size:18px;margin-bottom:10px}
+#question{font-size:20px;margin:15px 0;font-weight:bold}
+.answers button{display:block;width:100%;margin:6px 0;padding:10px;border:none;border-radius:10px;font-size:16px;cursor:pointer}
+.answers button:hover{background:#ecf0f1}
+#field{position:relative;height:300px;background:linear-gradient(#1abc9c,#16a085);border-radius:15px;margin-top:20px;overflow:hidden}
+.player{position:absolute;bottom:40px;width:120px;height:180px}
+#p1{left:40px}
+#p2{right:40px}
+#goal{position:absolute;right:0;top:80px;width:120px;height:120px;border:5px solid #fff}
+#ball{position:absolute;left:180px;bottom:70px;width:30px;height:30px;border-radius:50%;background:white;border:3px solid black;display:none}
+.kick{animation:kick 0.8s linear}
+.save{animation:save 0.8s linear}
+@keyframes kick{to{transform:translateX(600px)}}
+@keyframes save{to{transform:translateX(300px)}}
+#status{text-align:center;font-size:20px;margin-top:10px;font-weight:bold}
+#gameover{display:none;text-align:center;font-size:48px;color:red;font-weight:bold;margin-top:30px}
+</style>
+</head>
+<body>
+<div id="game">
+<h1>⚽ İki Nəfərlik Pensiya Quiz Oyunu</h1>
+<div id="info">
+<div>İştirakçı 1: <span id="s1">0</span></div>
+<div>İştirakçı 2 (Qapıçı): <span id="s2">0</span></div>
+</div>
+<div id="question"></div>
+<div class="answers" id="answers"></div>
+<div id="field">
+<svg class="player" id="p1" viewBox="0 0 200 300">
+<circle cx="100" cy="40" r="30" fill="#f1c27d"/>
+<rect x="70" y="70" width="60" height="80" rx="20" fill="#2980b9"/>
+<line x1="90" y1="150" x2="60" y2="230" stroke="#000" stroke-width="10"/>
+<line x1="110" y1="150" x2="140" y2="230" stroke="#000" stroke-width="10"/>
+</svg>
+<svg class="player" id="p2" viewBox="0 0 200 300">
+<circle cx="100" cy="40" r="30" fill="#f1c27d"/>
+<rect x="65" y="70" width="70" height="90" rx="20" fill="#c0392b"/>
+<!-- qollar -->
+<line x1="65" y1="95" x2="20" y2="140" stroke="#000" stroke-width="10"/>
+<line x1="135" y1="95" x2="180" y2="140" stroke="#000" stroke-width="10"/>
+<!-- ayaqlar -->
+<line x1="85" y1="160" x2="70" y2="250" stroke="#000" stroke-width="12"/>
+<line x1="115" y1="160" x2="130" y2="250" stroke="#000" stroke-width="12"/>
+</svg>
+<div id="goal"></div>
+<div id="ball"></div>
+</div>
+<div id="status"></div>
+<div id="gameover">GAME OVER</div>
+</div>
+<script>
+// ===== SUALLAR =====
+const questions=[
+{q:"Pensiya sistemi sosial institut olaraq ilk dəfə kim tərəfindən hərbiçilər üçün tətbiq edilmişdir?",a:["Otto fon Bismark","Qay Yuli Sezar","Napoleon Bonapart","Böyük Katerina"],c:1},
+{q:"Qay Yuli Sezar tərəfindən hərbiçilər üçün tətbiq edilən pensiya təminatı nəyi nəzərdə tuturdu?",a:["Aylıq pul müavinəti","Hərbi düşərgədə ömürlük qalmaq hüququ","Zəbt edilən torpaqlardan torpaq payı","Ailənin tam təminatı"],c:2},
+{q:"Müasir pensiya sisteminin tarixi hansı dövrlərdən başlayır?",a:["XV-XVI əsrlər","XVIII-XIX əsrlər","XX əsrin əvvəlləri","Orta əsrlər"],c:1},
+{q:"Tammiqyaslı pensiya sisteminin yaranması hansı ölkənin kanslerinin islahatları nəticəsində baş tutdu?",a:["Fransa","Böyük Britaniya","Almaniya","İsveç"],c:2},
+{q:"Almaniyada ümumi pensiya təminatı nə vaxtdan tətbiq olunmağa başlandı?",a:["1883-cü ildən","1884-cü ildən","1889-cu ildən","1900-cü ildən"],c:2},
+
+{q:"Pensiya sistemi institutları hansı mühüm sosial funksiyaları daşıyırlar?",a:["Kredit verilməsi və vergi yığılması","Yoxsulluqdan müdafiə, itirilmiş gəlirlərin yerini doldurmaq və qocalara və əlillərə yardım","Məşğulluğun artırılması və qiymət sabitliyi","Xarici ticarətin tənzimlənməsi"],c:1},
+{q:"Pensiya sisteminin baza elementlərinə hansı daxil deyil?",a:["Sosial sığorta","Özəl sığorta təşəbbüsü","Dövlət büdcəsindən xərclər","Korporativ pensiyalar"],c:2},
+{q:"Milli pensiya sistemlərinin əksəriyyəti üçün səciyyəvi olan əlamət hansıdır?",a:["Yalnız dövlət pensiyaları","Sosial sığortanın dominant rolu","Sürətli islahatlar","Yalnız fərdi hesablar"],c:1},
+{q:"Pensiya sisteminin düzgün inkişaf strategiyasını seçmək üçün hansı yanaşmaya müraciət etmək lazımdır?",a:["Maliyyə","Statistik","Funksional","İnstitusional"],c:3},
+{q:"İnkişaf etməkdə olan ölkələr pensiya təminatı resurslarına görə neçə qrupda təsnif edilir?",a:["2","3","4","5"],c:1},
+
+{q:"Pensiya sistemlərinin bütün aspektlərini əhatə edən normativ standartlar hansı təşkilatın hesabatlarında öz əksini tapmamışdır?",a:["Beynəlxalq Valyuta Fondu","Dünya Bankı","Beynəlxalq Əmək Təşkilatı","Avropa Sosial Xartiyası"],c:0},
+{q:"Dünya Bankının pensiya sistemi ilə bağlı əsas hesabatı necə adlanır?",a:["Gələcəyin Sosial Sığortası","Yaşlı Nəsil Böhranının Qarşının Alınması","Qlobal Pensiya İslahatları","Davalı Sosial Pensiya Sistemləri"],c:1},
+{q:"Hansı pensiya modelinin maliyyə cəhətdən qeyri-effektivliyi standartlarla əlaqələndirilir?",a:["İcbari maliyyələşən fondlar","PAYG modeli","Könüllü sığorta","Üç sütunlu model"],c:1},
+{q:"Dünya Bankının üç sütunlu standart modelinin birinci sütunu nəyi müəyyən edir?",a:["Könüllü əmanət planı","Minimum pensiya təminatı","Özəl fondlar","Korporativ pensiyalar"],c:1},
+{q:"Üç sütunlu modelin ikinci sütunu hansı funksiyanı nəzərdə tutur?",a:["Yalnız könüllü qənaət","Yalnız dövlət pensiyası","Qənaət və sığorta funksiyaları","Vergi yığımının optimallaşdırılması"],c:2},
+{q:"Beynəlxalq Əmək Təşkilatının Konvensiyasına görə pensiyalar hansı vasitələrlə maliyyələşdirilir?",a:["Yalnız dövlət büdcəsi","Sosial sığorta ödəmələri və vergilər","Yalnız ianələr","Yalnız kreditlər"],c:1},
+{q:"Azərbaycan Respublikasının qoşulduğu sosial-iqtisadi hüquqları təmin edən sənəd hansıdır?",a:["Paris Xartiyası","Avropa İnsan Hüquqları Konvensiyası","Avropa Sosial Xartiyası","Beynəlxalq Mülki və Siyasi Hüquqlar Paktı"],c:2},
+{q:"Avropa Sosial Xartiyası nə zaman qəbul edilmişdir?",a:["1948","1961","1996","2000"],c:1},
+
+{q:"Konseptual olaraq mövcud olan üç pensiya sistemi tipologiyasından biri hansıdır?",a:["Korporativ","Rezidualist","Universal","Individual"],c:3},
+{q:"Dövlətin yalnız ən ehtiyacı olanlara pensiya verdiyi sistem hansıdır?",a:["Universal","Korporativ","Rezidualist","Fərdi"],c:2},
+{q:"Sosial hüquqların üstünlük təşkil etdiyi pensiya sistemi necə adlanır?",a:["Rezidualist","Universal","Korporativ","Özəl"],c:1},
+{q:"Qanunvericiliyə əsasən pensiyaların hansı növləri mövcuddur?",a:["Könüllü və məcburi","Əmək (sosial sığorta) və sosial","Dövlət və özəl","İcbari və könüllü"],c:1},
+
+{q:"Aşağıdakılardan hansı əmək pensiyasının növü deyil?",a:["Yaşa görə","Əlilliyə görə","Ailə başçısını itirməyə görə","Sosial yardım pensiyası"],c:3},
+{q:"Vətəndaşlar dövlət pensiyası ilə yanaşı hansı pensiyaları ala bilər?",a:["Sahibkarlardan və könüllü sığorta üzrə","Yalnız dövlət","Yalnız xarici","Yalnız korporativ"],c:0},
+{q:"Azərbaycanda pensiyalar hansı fondun vəsaiti hesabına ödənilir?",a:["ƏƏSMN","Sığorta Fondu","Dövlət Sosial Müdafiə Fondu","Məşğulluq Fondu"],c:2},
+
+{q:"Sosial pensiyalar hansı hallarda təyin edilir?",a:["Yalnız işləyənlərə","Əmək pensiyası hüququ olduqda","Əmək qabiliyyəti olmayanlara","Bütün vətəndaşlara"],c:2},
+{q:"Sosial pensiya almaq hüququ olan kişilər üçün yaş həddi neçədir?",a:["62","65","67","70"],c:2},
+{q:"Sosial pensiya almaq hüququ olan qadınlar üçün yaş həddi neçədir?",a:["60","62","65","57"],c:1},
+{q:"Üç və daha çox uşaq anası neçə yaşda sosial pensiya alır?",a:["55","57","60","62"],c:1},
+{q:"Sosial pensiya kimlərə təyin olunur?",a:["İşləyən valideynlərə","Ailə başçısını itirmiş uşaqlara","Əmək pensiyası alanlara","Səhiyyə işçilərinə"],c:1},
+{q:"Neçə yaşına çatmamış əlil uşaqlara sosial pensiya təyin olunur?",a:["18","16","14","20"],c:1},
+{q:"I qrup əlillərə sosial pensiya nə qədərdir?",a:["80%","100%","50%","Minimal əmək haqqı"],c:1},
+{q:"II qrup əlillərə sosial pensiya nə qədərdir?",a:["100%","90%","80%","70%"],c:2},
+{q:"Ailə başçısını itirmiş uşaqlara sosial pensiya nə qədərdir?",a:["50%","60%","80%","100%"],c:2},
+
+{q:"Pensiya sistemi mürəkkəb mexanizm olaraq hansı institutları əhatə edir?",a:["İqtisadi, mədəni","Siyasi, coğrafi","İqtisadi, sosial və hüquqi","Regional və qlobal"],c:2},
+{q:"Dünya Bankının pensiya sisteminə yanaşmasının əsasını nə təşkil edir?",a:["Pensiya və iqtisadi artım əlaqəsi","Pensiya məbləği","Fondun idarəsi","Sosial ədalət"],c:0},
+{q:"Avropa Sosial Xartiyasında sosial pensiyanın artırılması necə nəzərdə tutulur?",a:["Təcili","Stabil","Proqressiv","10 ildən bir"],c:2},
+{q:"PAYG sistemi şəxsi yığımları niyə azaldır?",a:["Rəqabət","Dövlət öhdəliyi","İnflyasiya","Bazar yoxluğu"],c:1},
+{q:"Pensiya institutlarının modernləşdirilməsi nədən asılıdır?",a:["Xarici kreditlər","Məşğulluq","Fundamental sosial-iqtisadi problemlərin həlli","Siyasi iradə"],c:2}
+];
+
+// ===== OYUN DƏYİŞƏNLƏRİ =====
+let attackerPool=[...questions].sort(()=>Math.random()-0.5);
+let keeperPool=[...questions].sort(()=>Math.random()-0.5);
+let ai=0,ki=0;
+let turn='attacker';
+let s1=0,s2=0;
+let attackerWrong=false;
+
+const qEl=document.getElementById('question');
+const aEl=document.getElementById('answers');
+const st=document.getElementById('status');
+const ball=document.getElementById('ball');
+
+// ===== SUAL YÜKLƏ =====
+function loadQuestion(){
+  let q;
+  if(turn==='attacker'){
+    if(ai>=attackerPool.length){st.innerText='Sual bitdi';return;}
+    q=attackerPool[ai];
+    qEl.innerText='Hücumçu sualı: '+q.q;
+  } else {
+    if(ki>=keeperPool.length){st.innerText='Sual bitdi';return;}
+    q=keeperPool[ki];
+    qEl.innerText='Qapıçı sualı: '+q.q;
+  }
+  aEl.innerHTML='';
+  q.a.forEach((ans,i)=>{
+    const b=document.createElement('button');
+    b.innerText=ans;
+    b.onclick=()=>answer(i);
+    aEl.appendChild(b);
+  });
+}
+
+// ===== CAVAB YOXLA =====
+function answer(i){
+  ball.style.display='block';
+  ball.className='';
+
+  if(turn==='attacker'){
+    const q=attackerPool[ai];
+    if(i===q.c){
+      st.innerText='QOL! Hücumçu qalib gəldi';
+      ball.classList.add('kick');
+      s1++;
+      document.getElementById('s1').innerText=s1;
+      showWin();
+      return;
+    } else {
+      st.innerText='Hücumçu səhv etdi – qapıçı cavab verir';
+      attackerWrong=true;
+      ai++;
+      turn='keeper';
+    }
+  } else {
+    const q=keeperPool[ki];
+    if(i===q.c){
+      st.innerText='Qapıçı düzgün cavab verdi – QALİB!';
+      ball.classList.add('save');
+      s2++;
+      document.getElementById('s2').innerText=s2;
+      showWin();
+      return;
+    } else {
+      st.innerText='Hər iki iştirakçı səhv etdi – oyun davam edir';
+      if(attackerWrong){s1++;document.getElementById('s1').innerText=s1;}
+      attackerWrong=false;
+      ki++;
+      turn='attacker';
+    }
+  }
+  setTimeout(loadQuestion,600);
+}
+
+function showWin(){
+  qEl.innerHTML="<div style='font-size:36px;color:green;font-weight:bold'>HALALDI SƏNƏ ƏMİOĞLU !</div>";
+  aEl.innerHTML='';
+}
+
+// ===== OYUNU BAŞLAT =====
+loadQuestion();
+</script>
+</body>
+</html>
